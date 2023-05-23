@@ -16,8 +16,8 @@
 ### 担当追加機能
 * 敵を移動させる機能
 ### ToDo
-- [ ] 敵を移動させる機能
-- [ ] 左右で移動パターンを違うものにする
+- [x] 敵を移動させる機能
+- [x] 左右で移動パターンを違うものにする
 ### 参考資料
 　Pythonで簡単ゲームを作成 - https://umenori.com/2021/10/04/python-pygame-1/
 　Pygameを使って簡単なシューティングゲームを作ってみた - https://github.com/oshiro0460/shooting-game/blob/main/shooting_game.py
