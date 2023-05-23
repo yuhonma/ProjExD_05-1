@@ -9,17 +9,16 @@ from pygame.sprite import AbstractGroup
 WIDTH = 600
 HEIGHT = 1000
 
-def check_bound(area: pg.Rect, obj: pg.Rect) -> tuple[bool, bool]:
+def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内か画面外かを判定し，真理値タプルを返す
-    引数1 area：画面SurfaceのRect
-    引数2 obj：オブジェクト（爆弾，こうかとん）SurfaceのRect
+    引数 obj：オブジェクト（爆弾，こうかとん，ビーム）SurfaceのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
     yoko, tate = True, True
-    if obj.left < area.left or area.right < obj.right:  # 横方向のはみ出し判定
+    if obj.left < 0 or WIDTH < obj.right:  # 横方向のはみ出し判定
         yoko = False
-    if obj.top < area.top or area.bottom < obj.bottom:  # 縦方向のはみ出し判定
+    if obj.top < 0 or HEIGHT < obj.bottom:  # 縦方向のはみ出し判定
         tate = False
     return yoko, tate
 
@@ -27,7 +26,7 @@ class Player(pg.sprite.Sprite):
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
-    _delta = {  # 押下キーと移動量の辞書
+    delta = {  # 押下キーと移動量の辞書
         pg.K_UP: (0, -1),
         pg.K_DOWN: (0, +1),
         pg.K_LEFT: (-1, 0),
@@ -49,7 +48,7 @@ class Player(pg.sprite.Sprite):
             if event.type == pg.QUIT:
                 return 0
             else:
-                self.speed = 10
+                self.speed = 7
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -58,19 +57,51 @@ class Player(pg.sprite.Sprite):
         引数2 screen：画面Surface
         """
         sum_mv = [0, 0]
-        for k, mv in __class__._delta.items():
+        for k, mv in __class__.delta.items():
             if key_lst[k]:
-                self.rct.move_ip(mv)
-                sum_mv[0] += mv[0]  # 横方向合計
-                sum_mv[1] += mv[1]  # 縦方向合計
-        if check_bound(screen.get_rect(), self.rct) != (True, True):
-            for k, mv in __class__._delta.items():
+                self.rct.move_ip(+self.speed*mv[0], +self.speed*mv[1])
+                sum_mv[0] += mv[0]
+                sum_mv[1] += mv[1]
+        if check_bound(self.rct) != (True, True):
+            for k, mv in __class__.delta.items():
                 if key_lst[k]:
-                    self.rct.move_ip(-mv[0], -mv[1])
+                    self.rct.move_ip(-self.speed*mv[0], -self.speed*mv[1])
         screen.blit(self.img, self.rct) 
 
+class Enemy(pg.sprite.Sprite):
+    lrCheese = [0, 900]
 
-
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.04)
+        self.rect = self.image.get_rect()
+        self.direction = random.randint(1,1000)
+        if self.direction < 500:
+            self.rect.centerx = 0
+        else:
+            self.rect.centerx = 600
+        self.rect.centery = random.randint(0,300)
+        self.dx = 2
+        print("deta")
+        print(self.rect)
+    
+    def update(self):
+        if self.direction < 500 :
+            self.rect.move_ip(2,2)
+            if self.rect.left > 100:
+                self.rect.move_ip(0, -2)
+            if self.rect.left > 480:
+                self.rect.move_ip(0, -2)
+        else :
+            self.rect.move_ip(-2, 2)
+            if self.rect.left > 100:
+                self.rect.move_ip(0, -2)
+            if self.rect.left > 480:
+                self.rect.move_ip(0, -2)
+        if self.rect.right < 0:
+            self.kill()
+        if self.rect.left > 900:
+            self.kill()
 
 def main():
     pg.display.set_caption("はじめてのPygame")
@@ -79,7 +110,9 @@ def main():
     bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
     player = Player((300, 800))
+    emys = pg.sprite.Group()
     tmr = 0
+    clock = pg.time.Clock()
 
     while True:
         for event in pg.event.get():
@@ -87,10 +120,16 @@ def main():
 
         screen.blit(bg_img, [0,0])
 
+        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+            emys.add(Enemy())
+
         key_lst = pg.key.get_pressed()
+        emys.update()
+        emys.draw(screen)
         player.update(key_lst, screen)
         pg.display.update()
-        clock.tick(10000)
+        tmr += 1
+        clock.tick(50)
 
 
 if __name__ == "__main__":
