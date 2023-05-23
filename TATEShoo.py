@@ -12,7 +12,7 @@ HEIGHT = 1000
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内か画面外かを判定し，真理値タプルを返す
-    引数 obj：オブジェクト（爆弾，こうかとん，ビーム）SurfaceのRect
+    引数 obj：オブジェクト（自機）SurfaceのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
     yoko, tate = True, True
@@ -24,7 +24,7 @@ def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
 
 class Player(pg.sprite.Sprite):
     """
-    ゲームキャラクター（こうかとん）に関するクラス
+    自機に関するクラス
     """
     delta = {  # 押下キーと移動量の辞書
         pg.K_UP: (0, -1),
@@ -35,9 +35,8 @@ class Player(pg.sprite.Sprite):
 
     def __init__(self, xy: tuple[int, int]):
         """
-        こうかとん画像Surfaceを生成する
-        引数1 num：こうかとん画像ファイル名の番号
-        引数2 xy：こうかとん画像の位置座標タプル
+        自機画像Surfaceを生成する
+        引数2 xy：自機画像の位置座標タプル
         """
         super().__init__()
         img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.05)  # 左向き，2倍
@@ -52,7 +51,7 @@ class Player(pg.sprite.Sprite):
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
-        押下キーに応じてこうかとんを移動させる
+        押下キーに応じて自機を移動させる
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
         """
@@ -69,24 +68,27 @@ class Player(pg.sprite.Sprite):
         screen.blit(self.img, self.rct) 
 
 class Enemy(pg.sprite.Sprite):
-    lrCheese = [0, 900]
+    """
+    敵Surfaceを生成する
+    敵の生成は、出現方向、上下位置ともにランダム。
+    出現した方向によって動きを変える。
+    """
 
     def __init__(self):
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.04)
         self.rect = self.image.get_rect()
-        self.direction = random.randint(1,1000)
+        self.direction = random.randint(1,1000) #方向を決める数値
         if self.direction < 500:
             self.rect.centerx = 0
         else:
             self.rect.centerx = 600
         self.rect.centery = random.randint(0,300)
-        self.dx = 2
-        print("deta")
+        print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
     
     def update(self):
-        if self.direction < 500 :
+        if self.direction < 500 : #
             self.rect.move_ip(2,2)
             if self.rect.left > 100:
                 self.rect.move_ip(0, -2)
