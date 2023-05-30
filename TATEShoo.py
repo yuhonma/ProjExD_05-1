@@ -6,8 +6,8 @@ import time
 import pygame as pg
 from pygame.sprite import AbstractGroup
 
-WIDTH = 600
-HEIGHT = 1000
+WIDTH = 500
+HEIGHT = 600
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -39,7 +39,7 @@ class Player(pg.sprite.Sprite):
         引数2 xy：自機画像の位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.05)  # 左向き，2倍
+        img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.04)  # 左向き，2倍
         self.img = img0
         self.rct = self.img.get_rect()
         self.rct.center = xy
@@ -76,33 +76,33 @@ class Enemy(pg.sprite.Sprite):
 
     def __init__(self):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.04)
+        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.03)
         self.rect = self.image.get_rect()
         self.direction = random.randint(1,1000) #方向を決める数値
         if self.direction < 500:
             self.rect.centerx = 0
         else:
-            self.rect.centerx = 600
-        self.rect.centery = random.randint(0,300)
+            self.rect.centerx = 500
+        self.rect.centery = random.randint(0,150)
         print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
     
     def update(self):
         if self.direction < 500 : #
-            self.rect.move_ip(2,2)
+            self.rect.move_ip(2,1)
             if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
+                self.rect.move_ip(0, -1)
             if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+                self.rect.move_ip(0, -1)
         else :
-            self.rect.move_ip(-2, 2)
+            self.rect.move_ip(-2, 1)
             if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
+                self.rect.move_ip(0, -1)
             if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+                self.rect.move_ip(0, -1)
         if self.rect.right < 0:
             self.kill()
-        if self.rect.left > 900:
+        if self.rect.left > 600:
             self.kill()
 
 def main():
@@ -111,7 +111,7 @@ def main():
     clock  = pg.time.Clock()
     bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
-    player = Player((300, 800))
+    player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
