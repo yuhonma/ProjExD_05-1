@@ -92,7 +92,7 @@ class Enemy(pg.sprite.Sprite):
         self.rect.centery = random.randint(25,200)
         print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
-    
+        
     def update(self):
         if self.direction < 500 : #
             self.rect.move_ip(2,1)
