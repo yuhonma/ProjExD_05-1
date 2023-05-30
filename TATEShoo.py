@@ -2,12 +2,13 @@ import math
 import random
 import sys
 import time
+import pygame
 
 import pygame as pg
 from pygame.sprite import AbstractGroup
 
-WIDTH = 600
-HEIGHT = 1000
+WIDTH = 500
+HEIGHT = 600
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -39,7 +40,7 @@ class Player(pg.sprite.Sprite):
         引数2 xy：自機画像の位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.05)  # 左向き，2倍
+        img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.04)  # 左向き，2倍
         self.img = img0
         self.rct = self.img.get_rect()
         self.rct.center = xy
@@ -67,6 +68,32 @@ class Player(pg.sprite.Sprite):
                     self.rct.move_ip(-self.speed*mv[0], -self.speed*mv[1])
         screen.blit(self.img, self.rct) 
 
+class Beam(pg.sprite.Sprite):
+ 
+    def __init__(self, player: Player):
+        """
+        ビーム画像Surfaceを生成する
+        引数 bird：ビームを放つ
+        """ 
+        
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/beam.png"), 0, 0.7)
+        self.rct = self.image.get_rect()
+        self.rct.center = player.rct.center
+        self.speed = 10
+
+    def update(self,screen):
+        """
+        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """
+        self.rct.move_ip(0,-self.speed)
+        screen.blit(self.image,self.rct)
+        #print(self.rct.center)
+        if check_bound(self.rct) != (True, True):
+            self.kill()
+
+
 class Enemy(pg.sprite.Sprite):
     """
     敵Surfaceを生成する
@@ -76,33 +103,33 @@ class Enemy(pg.sprite.Sprite):
 
     def __init__(self):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.04)
+        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/tekibig.png"), 0, 0.03)
         self.rect = self.image.get_rect()
         self.direction = random.randint(1,1000) #方向を決める数値
         if self.direction < 500:
             self.rect.centerx = 0
         else:
             self.rect.centerx = 600
-        self.rect.centery = random.randint(0,300)
+        self.rect.centery = random.randint(25,200)
         print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
     
     def update(self):
         if self.direction < 500 : #
             self.rect.move_ip(2,2)
-            if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
-            if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+            if self.rect.left > 50:
+                self.rect.move_ip(0, -1)
+            if self.rect.left > 380:
+                self.rect.move_ip(0, -1)
         else :
             self.rect.move_ip(-2, 2)
-            if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
-            if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+            if self.rect.left > 50:
+                self.rect.move_ip(0, -1)
+            if self.rect.left > 380:
+                self.rect.move_ip(0, -1)
         if self.rect.right < 0:
             self.kill()
-        if self.rect.left > 900:
+        if self.rect.left > 500:
             self.kill()
 
 def main():
@@ -111,14 +138,19 @@ def main():
     clock  = pg.time.Clock()
     bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
-    player = Player((300, 800))
+    player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
 
+    beams = pg.sprite.Group()
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                beams.add(Beam(player))
+
 
         screen.blit(bg_img, [0,0])
 
@@ -128,6 +160,7 @@ def main():
         key_lst = pg.key.get_pressed()
         emys.update()
         emys.draw(screen)
+        beams.update(screen)
         player.update(key_lst, screen)
         pg.display.update()
         tmr += 1
