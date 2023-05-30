@@ -2,7 +2,6 @@ import math
 import random
 import sys
 import time
-import pygame
 
 import pygame as pg
 from pygame.sprite import AbstractGroup
@@ -73,32 +72,6 @@ class Player(pg.sprite.Sprite):
                 if key_lst[k]:
                     self.rct.move_ip(-self.speed*mv[0], -self.speed*mv[1])
         screen.blit(self.img, self.rct) 
-
-class Beam(pg.sprite.Sprite):
- 
-    def __init__(self, player: Player):
-        """
-        ビーム画像Surfaceを生成する
-        引数 bird：ビームを放つ
-        """ 
-        
-        super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/beam.png"), 0, 0.7)
-        self.rct = self.image.get_rect()
-        self.rct.center = player.rct.center
-        self.speed = 10
-
-    def update(self,screen):
-        """
-        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
-        引数 screen：画面Surface
-        """
-        self.rct.move_ip(0,-self.speed)
-        screen.blit(self.image,self.rct)
-        #print(self.rct.center)
-        if check_bound(self.rct) != (True, True):
-            self.kill()
-
 
 class Enemy(pg.sprite.Sprite):
     """
@@ -176,14 +149,9 @@ def main():
     tmr = 0
     clock = pg.time.Clock()
 
-    beams = pg.sprite.Group()
-
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(player))
-
 
         #screen.blit(bg_img, [0,0])
         y = tmr % 1200
@@ -196,7 +164,6 @@ def main():
         key_lst = pg.key.get_pressed()
         emys.update()
         emys.draw(screen)
-        beams.update(screen)
         player.update(key_lst, screen)
         if random.random() < 0.1:  # 星が出る確率(ここから)
             star = Star()
