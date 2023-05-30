@@ -191,7 +191,7 @@ class Explosion(pg.sprite.Sprite):
         """
         super().__init__()
         img = pg.image.load("ex05/fig/explosion.gif")
-        img = pg.transform.rotozoom(img, 0, 0.8)
+        img = pg.transform.rotozoom(img, 0, 0.1)
         self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=enemy.rect.center)
