@@ -122,17 +122,17 @@ class Enemy(pg.sprite.Sprite):
         
     def update(self):
         if self.direction < 500 : #
-            self.rect.move_ip(2,2)
-            if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
-            if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+            self.rect.move_ip(2,1)
+            if self.rect.left > 50:
+                self.rect.move_ip(0, -1)
+            if self.rect.left > 380:
+                self.rect.move_ip(0, -1)
         else :
-            self.rect.move_ip(-2, 2)
-            if self.rect.left > 100:
-                self.rect.move_ip(0, -2)
-            if self.rect.left > 480:
-                self.rect.move_ip(0, -2)
+            self.rect.move_ip(-2, 1)
+            if self.rect.left > 50:
+                self.rect.move_ip(0, -1)
+            if self.rect.left > 380:
+                self.rect.move_ip(0, -1)
         if self.rect.right < 0:
             self.kill()
         if self.rect.left > 500:
@@ -164,7 +164,7 @@ for _ in range(1):
     stars.append(Star())
 
 
-class Explosion:
+class Explosion(pg.sprite.Sprite):
     """
     爆発エフェクトに関するクラス
     """
@@ -174,6 +174,7 @@ class Explosion:
         爆弾が爆発するエフェクトを生成する
         引数 enemy：爆発する敵インスタンス
         """
+        super().__init__()
         img = pg.image.load("ex05-2/fig/explosion.gif")
         self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
         self.image = self.imgs[0]
@@ -197,9 +198,9 @@ def main():
     clock  = pg.time.Clock()
     bg_img = pg.image.load("ex05/fig/haikei.jpg") #変えた（森川）
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
-    bg_img2 = pg.image.load("ex05/fig/haikei.jpg") #変えた（森川）
-    bg_img2= pg.transform.flip(pg.transform.rotozoom(bg_img, 0, 2),False,True)
-    player = Player((300, 800))
+    bg_img2 = pg.image.load("ex05/fig/haikei.jpg")
+    bg_img2  = pg.transform.flip(pg.transform.rotozoom(bg_img2, 0, 2), False, True) #変えた（森川）
+    player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
     clock = pg.time.Clock()
