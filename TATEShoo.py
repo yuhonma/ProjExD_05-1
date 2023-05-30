@@ -8,6 +8,12 @@ from pygame.sprite import AbstractGroup
 
 WIDTH = 500
 HEIGHT = 600
+star_points = [
+    (0, -50), (14, -20), (47, -15), (23, 7),
+    (29, 40), (0, 25), (-29, 40), (-23, 7),
+    (-47, -15), (-14, -20)
+
+] #星の生成
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -150,6 +156,28 @@ class Score:
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+class Star:
+    """
+    スターに関するクラス
+    一定の確率で画面外から降ってくる
+    """
+    def __init__(self):
+        self.x = random.randint(-WIDTH, WIDTH)
+        self.y = random.randint(-100, 0)
+        self.speed_x = random.uniform(1,2)
+        self.speed_y = random.uniform(2, 1)
+        self.scale = random.uniform(0.04, 0.25)
+
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+    def draw(self, screen):
+        transformed_points = [(point[0] * self.scale + self.x, point[1] * self.scale + self.y) for point in star_points]
+        pg.draw.polygon(screen, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), transformed_points)
+
+stars = []
+for _ in range(1):
+    stars.append(Star())
 
 class Explosion(pg.sprite.Sprite):
     """
@@ -163,10 +191,11 @@ class Explosion(pg.sprite.Sprite):
         """
         super().__init__()
         img = pg.image.load("ex05/fig/explosion.gif")
+        img = pg.transform.rotozoom(img, 0, 0.8)
         self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=enemy.rect.center)
-        self.life = 200 # 表示時間を200に設定
+        self.life = 50 # 表示時間を200に設定
     
     def update(self,screen:pg.Surface):
         """
@@ -177,6 +206,8 @@ class Explosion(pg.sprite.Sprite):
         self.life -= 1
         self.image = self.imgs[self.life//10%2] # 時間が経過するごとに交互に画像を変更させる
         screen.blit(self.image,self.rect)
+        if self.life < 0:
+            self.kill()
 
 
 def main():
@@ -185,18 +216,22 @@ def main():
     clock  = pg.time.Clock()
     bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
+    bg_img2 = pg.image.load("ex05/fig/haikei.jpg")
+    bg_img2  = pg.transform.flip(pg.transform.rotozoom(bg_img2, 0, 2), False, True) #変えた（森川）
     player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
     tmrs=0
     clock = pg.time.Clock()
     score=Score()
-
+    beams = pg.sprite.Group()
     exps = pg.sprite.Group()
 
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                beams.add(Beam(player))
 
         screen.blit(bg_img, [0,0])
 
@@ -205,6 +240,7 @@ def main():
         screen.blit(bg_img, [0, -y])
         screen.blit(bg_img2, [0, 600-y])
         screen.blit(bg_img, [0, 1200-y])
+
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
 
             emys.add(Enemy())
@@ -217,12 +253,22 @@ def main():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy))
+            score.score_up(10)
 
         key_lst = pg.key.get_pressed()
         emys.update()
         emys.draw(screen)
+        beams.update(screen)
+        exps.update(screen)
+        exps.draw(screen) 
         player.update(key_lst, screen)
         score.update(screen)
+        if random.random() < 0.1:  # 星が出る確率(ここから)
+            star = Star()
+            stars.append(star)
+        for star in stars:
+            star.update()
+            star.draw(screen) #(ここまで変えた)
         pg.display.update()
         tmr += 1
         clock.tick(50)
