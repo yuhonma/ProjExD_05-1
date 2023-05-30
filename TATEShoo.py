@@ -48,8 +48,8 @@ class Player(pg.sprite.Sprite):
         super().__init__()
         img0 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/jiki.png"), 0, 0.04)  # 左向き，2倍
         self.img = img0
-        self.rct = self.img.get_rect()
-        self.rct.center = xy
+        self.rect = self.img.get_rect()
+        self.rect.center = xy
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
@@ -65,14 +65,14 @@ class Player(pg.sprite.Sprite):
         sum_mv = [0, 0]
         for k, mv in __class__.delta.items():
             if key_lst[k]:
-                self.rct.move_ip(+self.speed*mv[0], +self.speed*mv[1])
+                self.rect.move_ip(+self.speed*mv[0], +self.speed*mv[1])
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
-        if check_bound(self.rct) != (True, True):
+        if check_bound(self.rect) != (True, True):
             for k, mv in __class__.delta.items():
                 if key_lst[k]:
-                    self.rct.move_ip(-self.speed*mv[0], -self.speed*mv[1])
-        screen.blit(self.img, self.rct) 
+                    self.rect.move_ip(-self.speed*mv[0], -self.speed*mv[1])
+        screen.blit(self.img, self.rect) 
 
 class Beam(pg.sprite.Sprite):
  
@@ -84,8 +84,8 @@ class Beam(pg.sprite.Sprite):
         
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/beam.png"), 0, 0.7)
-        self.rct = self.image.get_rect()
-        self.rct.center = player.rct.center
+        self.rect = self.image.get_rect()
+        self.rect.center = player.rect.center
         self.speed = 10
 
     def update(self,screen):
@@ -93,10 +93,10 @@ class Beam(pg.sprite.Sprite):
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
         引数 screen：画面Surface
         """
-        self.rct.move_ip(0,-self.speed)
-        screen.blit(self.image,self.rct)
+        self.rect.move_ip(0,-self.speed)
+        screen.blit(self.image,self.rect)
         #print(self.rct.center)
-        if check_bound(self.rct) != (True, True):
+        if check_bound(self.rect) != (True, True):
             self.kill()
 
 
@@ -175,7 +175,7 @@ class Explosion(pg.sprite.Sprite):
         引数 enemy：爆発する敵インスタンス
         """
         super().__init__()
-        img = pg.image.load("ex05-2/fig/explosion.gif")
+        img = pg.image.load("ex05/fig/explosion.gif")
         self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=enemy.rect.center)
@@ -189,7 +189,26 @@ class Explosion(pg.sprite.Sprite):
         """
         self.life -= 1
         self.image = self.imgs[self.life//10%2] # 時間が経過するごとに交互に画像を変更させる
-        screen.blit(self.image,self.rect)
+
+class Score:
+    """
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    敵機：10点
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.score = 0
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-50
+
+    def score_up(self, add):
+        self.score += add
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 
 def main():
@@ -205,6 +224,8 @@ def main():
     tmr = 0
     clock = pg.time.Clock()
 
+    score=Score()
+
     beams = pg.sprite.Group()
 
     exps = pg.sprite.Group()
@@ -216,7 +237,6 @@ def main():
                 beams.add(Beam(player))
 
 
-        # もしビームと敵当たったら、exps.add(Explosion(emy))
 
         #screen.blit(bg_img, [0,0])
         y = tmr % 1200
@@ -225,6 +245,10 @@ def main():
         screen.blit(bg_img, [0, 1200-y])
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
+
+        for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+            score.score_up(10)
+            exps.add(Explosion(emy))  # 爆発エフェクト
 
         key_lst = pg.key.get_pressed()
         emys.update()
@@ -237,6 +261,8 @@ def main():
         for star in stars:
             star.update()
             star.draw(screen) #(ここまで変えた)
+        score.update(screen)
+        exps.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
