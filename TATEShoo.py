@@ -2,19 +2,12 @@ import math
 import random
 import sys
 import time
-import pygame
 
 import pygame as pg
 from pygame.sprite import AbstractGroup
 
 WIDTH = 500
 HEIGHT = 600
-star_points = [
-    (0, -50), (14, -20), (47, -15), (23, 7),
-    (29, 40), (0, 25), (-29, 40), (-23, 7),
-    (-47, -15), (-14, -20)
-
-] #星の生成
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -99,7 +92,6 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
-
 class Enemy(pg.sprite.Sprite):
     """
     敵Surfaceを生成する
@@ -116,52 +108,47 @@ class Enemy(pg.sprite.Sprite):
             self.rect.centerx = 0
         else:
             self.rect.centerx = 500
-        self.rect.centery = random.randint(25,200)
+        self.rect.centery = random.randint(0,150)
         print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
-        
+    
     def update(self):
         if self.direction < 500 : #
             self.rect.move_ip(2,1)
-            if self.rect.left > 50:
+            if self.rect.left > 100:
                 self.rect.move_ip(0, -1)
-            if self.rect.left > 380:
+            if self.rect.left > 480:
                 self.rect.move_ip(0, -1)
         else :
             self.rect.move_ip(-2, 1)
-            if self.rect.left > 50:
+            if self.rect.left > 100:
                 self.rect.move_ip(0, -1)
-            if self.rect.left > 380:
+            if self.rect.left > 480:
                 self.rect.move_ip(0, -1)
         if self.rect.right < 0:
             self.kill()
-        if self.rect.left > 500:
+        if self.rect.left > 600:
             self.kill()
 
-
-
-class Star:
+class Score:
     """
-    スターに関するクラス
-    一定の確率で画面外から降ってくる
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    敵機：10点
     """
     def __init__(self):
-        self.x = random.randint(-WIDTH, WIDTH)
-        self.y = random.randint(-100, 0)
-        self.speed_x = random.uniform(1,2)
-        self.speed_y = random.uniform(2, 1)
-        self.scale = random.uniform(0.04, 0.25)
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.score = 0
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-50
 
-    def update(self):
-        self.x += self.speed_x
-        self.y += self.speed_y
-    def draw(self, screen):
-        transformed_points = [(point[0] * self.scale + self.x, point[1] * self.scale + self.y) for point in star_points]
-        pg.draw.polygon(screen, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), transformed_points)
+    def score_up(self, add):
+        self.score += add
 
-stars = []
-for _ in range(1):
-    stars.append(Star())
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 
 class Explosion(pg.sprite.Sprite):
@@ -196,27 +183,22 @@ def main():
     pg.display.set_caption("はじめてのPygame")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
-    bg_img = pg.image.load("ex05/fig/haikei.jpg") #変えた（森川）
+    bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
-    bg_img2 = pg.image.load("ex05/fig/haikei.jpg")
-    bg_img2  = pg.transform.flip(pg.transform.rotozoom(bg_img2, 0, 2), False, True) #変えた（森川）
     player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
+    tmrs=0
     clock = pg.time.Clock()
-
-    beams = pg.sprite.Group()
+    score=Score()
 
     exps = pg.sprite.Group()
 
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(player))
 
-
-        # もしビームと敵当たったら、exps.add(Explosion(emy))
+        screen.blit(bg_img, [0,0])
 
         #screen.blit(bg_img, [0,0])
         y = tmr % 1200
@@ -224,7 +206,14 @@ def main():
         screen.blit(bg_img2, [0, 600-y])
         screen.blit(bg_img, [0, 1200-y])
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+
             emys.add(Enemy())
+        if tmrs<=199:
+            if tmr%100==0:
+                tmrs+=1
+        if tmr%20==0:
+            score.score_up(1)
+
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy))
@@ -232,14 +221,8 @@ def main():
         key_lst = pg.key.get_pressed()
         emys.update()
         emys.draw(screen)
-        beams.update(screen)
         player.update(key_lst, screen)
-        if random.random() < 0.1:  # 星が出る確率(ここから)
-            star = Star()
-            stars.append(star)
-        for star in stars:
-            star.update()
-            star.draw(screen) #(ここまで変えた)
+        score.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
