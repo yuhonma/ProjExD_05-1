@@ -8,6 +8,12 @@ from pygame.sprite import AbstractGroup
 
 WIDTH = 500
 HEIGHT = 600
+star_points = [
+    (0, -50), (14, -20), (47, -15), (23, 7),
+    (29, 40), (0, 25), (-29, 40), (-23, 7),
+    (-47, -15), (-14, -20)
+
+] #星の生成
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -105,12 +111,39 @@ class Enemy(pg.sprite.Sprite):
         if self.rect.left > 500:
             self.kill()
 
+
+
+class Star:
+    """
+    スターに関するクラス
+    一定の確率で画面外から降ってくる
+    """
+    def __init__(self):
+        self.x = random.randint(-WIDTH, WIDTH)
+        self.y = random.randint(-100, 0)
+        self.speed_x = random.uniform(1,2)
+        self.speed_y = random.uniform(2, 1)
+        self.scale = random.uniform(0.04, 0.25)
+
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+    def draw(self, screen):
+        transformed_points = [(point[0] * self.scale + self.x, point[1] * self.scale + self.y) for point in star_points]
+        pg.draw.polygon(screen, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), transformed_points)
+
+stars = []
+for _ in range(1):
+    stars.append(Star())
+
 def main():
     pg.display.set_caption("はじめてのPygame")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
-    bg_img = pg.image.load("ex05/fig/haikei.jpg")
+    bg_img = pg.image.load("ex05/fig/haikei.jpg") #変えた（森川）
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
+    bg_img2 = pg.image.load("ex05/fig/haikei.jpg")
+    bg_img2  = pg.transform.flip(pg.transform.rotozoom(bg_img2, 0, 2), False, True) #変えた（森川）
     player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
@@ -120,8 +153,11 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT: return
 
-        screen.blit(bg_img, [0,0])
-
+        #screen.blit(bg_img, [0,0])
+        y = tmr % 1200
+        screen.blit(bg_img, [0, -y])
+        screen.blit(bg_img2, [0, 600-y])
+        screen.blit(bg_img, [0, 1200-y])
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
@@ -129,6 +165,12 @@ def main():
         emys.update()
         emys.draw(screen)
         player.update(key_lst, screen)
+        if random.random() < 0.1:  # 星が出る確率(ここから)
+            star = Star()
+            stars.append(star)
+        for star in stars:
+            star.update()
+            star.draw(screen) #(ここまで変えた)
         pg.display.update()
         tmr += 1
         clock.tick(50)
