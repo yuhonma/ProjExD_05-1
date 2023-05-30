@@ -2,7 +2,6 @@ import math
 import random
 import sys
 import time
-import pygame
 
 import pygame as pg
 from pygame.sprite import AbstractGroup
@@ -99,7 +98,6 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
-
 class Enemy(pg.sprite.Sprite):
     """
     敵Surfaceを生成する
@@ -116,29 +114,47 @@ class Enemy(pg.sprite.Sprite):
             self.rect.centerx = 0
         else:
             self.rect.centerx = 500
-        self.rect.centery = random.randint(25,200)
+        self.rect.centery = random.randint(0,150)
         print("deta")  #出現したタイミングと、Surfaceの位置を監視する
         print(self.rect)
-        
+    
     def update(self):
         if self.direction < 500 : #
             self.rect.move_ip(2,1)
-            if self.rect.left > 50:
+            if self.rect.left > 100:
                 self.rect.move_ip(0, -1)
-            if self.rect.left > 380:
+            if self.rect.left > 480:
                 self.rect.move_ip(0, -1)
         else :
             self.rect.move_ip(-2, 1)
-            if self.rect.left > 50:
+            if self.rect.left > 100:
                 self.rect.move_ip(0, -1)
-            if self.rect.left > 380:
+            if self.rect.left > 480:
                 self.rect.move_ip(0, -1)
         if self.rect.right < 0:
             self.kill()
-        if self.rect.left > 500:
+        if self.rect.left > 600:
             self.kill()
 
+class Score:
+    """
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    敵機：10点
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.score = 0
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-50
 
+    def score_up(self, add):
+        self.score += add
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 class Star:
     """
@@ -163,7 +179,6 @@ stars = []
 for _ in range(1):
     stars.append(Star())
 
-
 class Explosion(pg.sprite.Sprite):
     """
     爆発エフェクトに関するクラス
@@ -176,10 +191,11 @@ class Explosion(pg.sprite.Sprite):
         """
         super().__init__()
         img = pg.image.load("ex05/fig/explosion.gif")
+        img = pg.transform.rotozoom(img, 0, 0.5)
         self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=enemy.rect.center)
-        self.life = 200 # 表示時間を200に設定
+        self.life = 50 # 表示時間を200に設定
     
     def update(self,screen:pg.Surface):
         """
@@ -189,45 +205,26 @@ class Explosion(pg.sprite.Sprite):
         """
         self.life -= 1
         self.image = self.imgs[self.life//10%2] # 時間が経過するごとに交互に画像を変更させる
-
-class Score:
-    """
-    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
-    敵機：10点
-    """
-    def __init__(self):
-        self.font = pg.font.Font(None, 50)
-        self.color = (0, 0, 255)
-        self.score = 0
-        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
-        self.rect = self.image.get_rect()
-        self.rect.center = 100, HEIGHT-50
-
-    def score_up(self, add):
-        self.score += add
-
-    def update(self, screen: pg.Surface):
-        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
-        screen.blit(self.image, self.rect)
+        screen.blit(self.image,self.rect)
+        if self.life < 0:
+            self.kill()
 
 
 def main():
     pg.display.set_caption("はじめてのPygame")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
-    bg_img = pg.image.load("ex05/fig/haikei.jpg") #変えた（森川）
+    bg_img = pg.image.load("ex05/fig/haikei.jpg")
     bg_img = pg.transform.rotozoom(bg_img, 0, 2)
     bg_img2 = pg.image.load("ex05/fig/haikei.jpg")
     bg_img2  = pg.transform.flip(pg.transform.rotozoom(bg_img2, 0, 2), False, True) #変えた（森川）
     player = Player((250, 500))
     emys = pg.sprite.Group()
     tmr = 0
+    tmrs=0
     clock = pg.time.Clock()
-
     score=Score()
-
     beams = pg.sprite.Group()
-
     exps = pg.sprite.Group()
 
     while True:
@@ -236,33 +233,41 @@ def main():
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(player))
 
+        screen.blit(bg_img, [0,0])
 
-
-        #screen.blit(bg_img, [0,0])
         y = tmr % 1200
         screen.blit(bg_img, [0, -y])
         screen.blit(bg_img2, [0, 600-y])
         screen.blit(bg_img, [0, 1200-y])
+
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+
             emys.add(Enemy())
+        if tmrs<=199:
+            if tmr%100==0:
+                tmrs+=1
+        if tmr%20==0:
+            score.score_up(1)
+
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+            exps.add(Explosion(emy))
             score.score_up(10)
-            exps.add(Explosion(emy))  # 爆発エフェクト
 
         key_lst = pg.key.get_pressed()
         emys.update()
         emys.draw(screen)
         beams.update(screen)
+        exps.update(screen)
+        exps.draw(screen) 
         player.update(key_lst, screen)
+        score.update(screen)
         if random.random() < 0.1:  # 星が出る確率(ここから)
             star = Star()
             stars.append(star)
         for star in stars:
             star.update()
             star.draw(screen) #(ここまで変えた)
-        score.update(screen)
-        exps.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
