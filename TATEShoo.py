@@ -163,6 +163,35 @@ stars = []
 for _ in range(1):
     stars.append(Star())
 
+
+class Explosion(pg.sprite.Sprite):
+    """
+    爆発エフェクトに関するクラス
+    """
+
+    def __init__(self,enemy:Enemy):
+        """
+        爆弾が爆発するエフェクトを生成する
+        引数 enemy：爆発する敵インスタンス
+        """
+        super().__init__()
+        img = pg.image.load("ex05-2/fig/explosion.gif")
+        self.imgs = [img, pg.transform.flip(img, 1, 1)] # 通常の画像と、左右上下を反転させた画像
+        self.image = self.imgs[0]
+        self.rect = self.image.get_rect(center=enemy.rect.center)
+        self.life = 200 # 表示時間を200に設定
+    
+    def update(self,screen:pg.Surface):
+        """
+        爆発時間を1減算した爆発経過時間_lifeに応じて爆発画像を切り替えることで
+        爆発エフェクトを表現する
+        引数 screen：画像Surface
+        """
+        self.life -= 1
+        self.image = self.imgs[self.life//10%2] # 時間が経過するごとに交互に画像を変更させる
+        screen.blit(self.image,self.rect)
+
+
 def main():
     pg.display.set_caption("はじめてのPygame")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -178,12 +207,16 @@ def main():
 
     beams = pg.sprite.Group()
 
+    exps = pg.sprite.Group()
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(player))
 
+
+        # もしビームと敵当たったら、exps.add(Explosion(emy))
 
         #screen.blit(bg_img, [0,0])
         y = tmr % 1200
